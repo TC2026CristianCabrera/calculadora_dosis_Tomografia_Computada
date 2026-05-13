@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Dosimétrico TC</title>
+    <!-- Tailwind CSS para estilos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* Animación suave para la tarjeta de autoría */
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+        .author-badge { animation: pulse-glow 3s infinite; }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex justify-center min-h-screen text-gray-800">
+
+    <div class="glass-panel rounded-2xl shadow-2xl p-6 md:p-8 max-w-6xl w-full flex flex-col border border-gray-100">
+        
+        <!-- ENCABEZADO MINIMALISTA -->
+        <div class="border-b border-gray-200 pb-5 mb-8 flex justify-between items-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700">
+                Análisis Dosimétrico TC
+            </h1>
+            <div class="hidden md:flex bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full items-center border border-indigo-100 shadow-sm">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <span class="text-sm font-semibold tracking-wide">Plataforma de Optimización Prospectiva</span>
+            </div>
+        </div>
+
+        <div id="alert-container" class="hidden mb-6 p-4 text-sm text-red-800 rounded-xl bg-red-50 border border-red-200 shadow-sm transition-all" role="alert">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                <span class="font-medium">Atención:</span> Por favor, revise que todos los campos tengan valores numéricos válidos.
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow">
+            
+            <!-- ================= COLUMNA IZQUIERDA: ENTRADA (5/12) ================= -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- 1. DATOS DEL PACIENTE -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <h2 class="text-lg font-bold text-gray-800 mb-5 flex items-center">
+                        <div class="bg-blue-100 p-2 rounded-lg mr-3 text-blue-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        Perfil Biológico
+                    </h2>
+                    
+                    <div class="grid grid-cols-3 gap-3 mb-4">
+                        <div class="col-span-1">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Edad</label>
+                            <input type="number" id="edad" value="40" min="0" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm p-2.5 transition-all">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Sexo</label>
+                            <select id="sexo" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm p-2.5 transition-all">
+                                <option value="F">Femenino</option>
+                                <option value="M" selected>Masculino</option>
+                            </select>
+                        </div>
+                        <div class="col-span-1">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Región</label>
+                            <select id="region" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm p-2.5 transition-all">
+                                <option value="Cabeza">Cabeza</option>
+                                <option value="Tórax">Tórax</option>
+                                <option value="Abdomen" selected>Abdomen</option>
+                                <option value="Pelvis">Pelvis</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Peso (kg)</label>
+                            <input type="number" id="peso" value="75" min="1" step="0.1" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm p-2.5 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Talla (cm)</label>
+                            <input type="number" id="talla" value="170" min="10" step="1" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm p-2.5 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">D. AP (cm)</label>
+                            <input type="number" id="ap" value="25" min="0.1" step="0.1" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm p-2.5 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">D. Lateral (cm)</label>
+                            <input type="number" id="lat" value="35" min="0.1" step="0.1" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm p-2.5 transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. PARÁMETROS TÉCNICOS -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <h2 class="text-lg font-bold text-gray-800 mb-5 flex items-center">
+                        <div class="bg-emerald-100 p-2 rounded-lg mr-3 text-emerald-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                        Parámetros de Adquisición
+                    </h2>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">kVp</label>
+                            <select id="kvp" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-sm p-2.5 transition-all">
+                                <option value="80">80</option>
+                                <option value="100">100</option>
+                                <option value="120" selected>120</option>
+                                <option value="140">140</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">mAs Efectivo</label>
+                            <input type="number" id="mas" value="150" min="10" step="5" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-sm p-2.5 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Pitch</label>
+                            <input type="number" id="pitch" value="1.0" min="0.1" step="0.1" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-sm p-2.5 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Largo (cm)</label>
+                            <input type="number" id="largo" value="40.0" min="1" step="1" class="w-full rounded-lg border-gray-300 bg-gray-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-sm p-2.5 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="mt-5 p-3 bg-emerald-50 rounded-xl flex items-center justify-between border border-emerald-100">
+                        <span class="text-xs font-semibold text-emerald-800 uppercase tracking-wider">CTDIvol (Estimado)</span>
+                        <div class="text-lg font-bold text-emerald-600"><span id="display-ctdivol-calc">12.0</span> mGy</div>
+                    </div>
+                </div>
+                
+                <button onclick="ejecutarCalculos()" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 px-6 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center text-lg">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Calcular Dosis
+                </button>
+            </div>
+
+            <!-- ================= COLUMNA DERECHA: RESULTADOS (7/12) ================= -->
+            <div class="lg:col-span-7 flex flex-col h-full space-y-6">
+                
+                <!-- Resultados Numéricos -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- IMC -->
+                    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">IMC</p>
+                        <p id="res-imc" class="text-3xl font-black text-gray-800">-</p>
+                        <p id="res-imc-cat" class="text-[10px] font-semibold mt-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Categoría</p>
+                    </div>
+                    <!-- D. Efectivo -->
+                    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">D. Efectivo</p>
+                        <div class="flex items-baseline space-x-1">
+                            <p id="res-diametro" class="text-3xl font-black text-blue-600">-</p>
+                            <span class="text-sm font-bold text-blue-400">cm</span>
+                        </div>
+                    </div>
+                    <!-- SSDE -->
+                    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">SSDE</p>
+                        <div class="flex items-baseline space-x-1">
+                            <p id="res-ssde" class="text-3xl font-black text-orange-500">-</p>
+                            <span class="text-sm font-bold text-orange-400">mGy</span>
+                        </div>
+                    </div>
+                    <!-- Dosis Efectiva -->
+                    <div class="bg-gray-900 p-4 rounded-2xl shadow-md flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Dosis Efectiva</p>
+                        <div class="flex items-baseline space-x-1">
+                            <p id="res-efectiva" class="text-3xl font-black text-red-400">-</p>
+                            <span class="text-sm font-bold text-red-300">mSv</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfica DRL y Optimización Dinámica -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex-grow flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-bold text-gray-800">
+                            Evaluación vs Límite DRL
+                        </h2>
+                        <span id="res-icono-estado" class="text-2xl drop-shadow-md"></span>
+                    </div>
+                    
+                    <!-- Contenedor del Gráfico -->
+                    <div class="relative h-48 w-full mb-4">
+                        <canvas id="drlChart"></canvas>
+                    </div>
+                    <p id="res-comparacion-texto" class="text-sm font-semibold text-center text-gray-600 border-b border-gray-100 pb-4">
+                        Ingrese parámetros para calcular...
+                    </p>
+
+                    <!-- Panel de Optimización Inteligente -->
+                    <div id="panel-optimizacion" class="hidden mt-4 pt-2 flex-grow flex-col">
+                        <h3 class="text-xs font-bold text-rose-800 mb-3 flex items-center uppercase tracking-wider bg-rose-50 p-2 rounded-lg border border-rose-100">
+                            <svg class="w-4 h-4 mr-2 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            Sugerencias de Optimización
+                        </h3>
+                        <ul id="lista-sugerencias" class="text-sm text-gray-700 space-y-3 custom-scrollbar overflow-y-auto pr-2">
+                            <!-- Inyección JS -->
+                        </ul>
+                    </div>
+                    
+                    <!-- Estado OK -->
+                    <div id="panel-ok" class="hidden mt-4 pt-2 flex-grow items-center justify-center">
+                         <div class="text-center p-4 bg-emerald-50 rounded-xl border border-emerald-100 w-full">
+                             <div class="bg-emerald-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 text-emerald-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                             </div>
+                             <p class="text-sm font-bold text-emerald-800">Protocolo Optimizado</p>
+                             <p class="text-xs text-emerald-600 mt-1">Los parámetros se mantienen dentro de márgenes ALARA referenciales.</p>
+                         </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PIE DE PÁGINA CON AUTORÍA TOTALMENTE DESTACADA -->
+        <footer class="mt-10 pt-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-gray-500 text-xs text-center md:text-left flex-1">
+                <p class="font-semibold text-gray-700">Algoritmo clínico y académico</p>
+                <p class="mt-1">Basado en Reportes AAPM TG-204/220 e ICRP 103. Herramienta diseñada para el control prospectivo de calidad y gestión de dosis.</p>
+            </div>
+            
+            <!-- Insignia de Autoría (Estilo Premium) -->
+            <div class="author-badge flex items-center space-x-4 bg-gradient-to-r from-blue-700 to-indigo-800 px-7 py-4 rounded-2xl shadow-xl transform transition-transform hover:scale-105 cursor-default">
+                <div class="bg-white rounded-full p-2.5 text-indigo-700 shadow-inner">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <div class="flex flex-col text-white">
+                    <span class="text-[10px] text-indigo-200 font-bold uppercase tracking-[0.2em] leading-none mb-1">Autor y Desarrollador</span>
+                    <span class="text-lg font-black tracking-wide leading-none">Profesor TM Cristian Cabrera G.</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Variables globales
+        let chartInstance = null;
+        const valoresDRL = { "Cabeza": 1000, "Tórax": 400, "Abdomen": 600, "Pelvis": 400 };
+
+        // Inicializar listeners
+        ['peso', 'talla'].forEach(id => document.getElementById(id).addEventListener('input', calcularIMC));
+        ['kvp', 'mas', 'pitch'].forEach(id => document.getElementById(id).addEventListener('input', estimarCTDIvol));
+        
+        function inicializarGrafico() {
+            const ctx = document.getElementById('drlChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['DLP Estimado', 'Límite DRL'],
+                    datasets: [{
+                        label: 'Dosis (mGy*cm)',
+                        data: [0, 0],
+                        backgroundColor: ['#e2e8f0', '#e2e8f0'],
+                        borderRadius: 6,
+                        borderWidth: 0,
+                        barThickness: 50
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9', drawBorder: false } },
+                        x: { grid: { display: false, drawBorder: false } }
+                    },
+                    animation: { duration: 800, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        function actualizarGrafico(dlp, drl, esExceso) {
+            chartInstance.data.datasets[0].data = [dlp, drl];
+            // Si hay exceso el DLP es rojo, si está optimizado es verde. El DRL siempre gris.
+            chartInstance.data.datasets[0].backgroundColor = [
+                esExceso ? 'rgba(239, 68, 68, 0.85)' : 'rgba(16, 185, 129, 0.85)', 
+                'rgba(148, 163, 184, 0.5)'
+            ];
+            chartInstance.update();
+        }
+
+        function calcularIMC() {
+            const peso = parseFloat(document.getElementById('peso').value);
+            const tallaCm = parseFloat(document.getElementById('talla').value);
+            if (!isNaN(peso) && !isNaN(tallaCm) && tallaCm > 0 && peso > 0) {
+                const imc = peso / Math.pow(tallaCm / 100, 2);
+                document.getElementById('res-imc').textContent = imc.toFixed(1);
+                
+                let cat = ""; let bg = ""; let text = "";
+                if (imc < 18.5) { cat = "Bajo peso"; bg = "bg-blue-100"; text = "text-blue-700"; }
+                else if (imc < 25) { cat = "Normal"; bg = "bg-emerald-100"; text = "text-emerald-700"; }
+                else if (imc < 30) { cat = "Sobrepeso"; bg = "bg-yellow-100"; text = "text-yellow-700"; }
+                else { cat = "Obesidad"; bg = "bg-red-100"; text = "text-red-700"; }
+                
+                const catSpan = document.getElementById('res-imc-cat');
+                catSpan.textContent = cat;
+                catSpan.className = `text-[10px] font-bold mt-1 px-2 py-0.5 rounded-full uppercase tracking-wider ${bg} ${text}`;
+                return imc;
+            }
+            return 0;
+        }
+
+        function estimarCTDIvol() {
+            const kvp = parseInt(document.getElementById('kvp').value);
+            const mas = parseFloat(document.getElementById('mas').value);
+            const pitch = parseFloat(document.getElementById('pitch').value);
+            
+            if (isNaN(mas) || isNaN(pitch) || pitch <= 0) return 0;
+            const rendimiento_kVp = { 80: 0.03, 100: 0.06, 120: 0.09, 140: 0.13 };
+            const ctdivol = (mas / pitch) * (rendimiento_kVp[kvp] || 0.09);
+            
+            document.getElementById('display-ctdivol-calc').textContent = ctdivol.toFixed(2);
+            return ctdivol;
+        }
+
+        function generarSugerencias(edad, imc, kvp, mas, pitch, region, sexo, exceso) {
+            const lista = document.getElementById('lista-sugerencias');
+            lista.innerHTML = '';
+            let s = [];
+
+            if (edad < 15 && kvp >= 100) s.push(`<li><strong class="text-rose-700">Tensión (kVp) Pediátrica:</strong> Reducir el kVp a 80 (o 70). Esto bajará la dosis exponencialmente y aumentará el realce del contraste en niños.</li>`);
+            if (imc < 20 && kvp >= 120 && region !== 'Cabeza') s.push(`<li><strong class="text-rose-700">Tensión (kVp):</strong> Paciente muy delgado. Evalúe usar 100 kVp.</li>`);
+            if (mas > 200 && imc < 30) s.push(`<li><strong class="text-rose-700">Modulación AEC:</strong> El mAs es muy alto para la contextura. Aumente el Índice de Ruido (Reference mAs) en la consola.</li>`);
+            if (pitch < 1.0 && region !== 'Cabeza') s.push(`<li><strong class="text-rose-700">Pitch (Solapamiento):</strong> Aumente el Pitch a 1.2-1.4 para acortar el tiempo de radiación.</li>`);
+            if (sexo === 'F' && region === 'Tórax') s.push(`<li><strong class="text-rose-700">Protección Tisular:</strong> Por alta radiosensibilidad mamaria femenina, considere optimizar la modulación angular (ECG/Tubo) si aplica, o reducir el largo al estricto necesario.</li>`);
+            
+            if(s.length === 0) s.push(`<li class="text-gray-500">Revise la colimación en el eje Z. Ajustar el largo del Topograma es la medida más rápida.</li>`);
+            lista.innerHTML = s.join('');
+        }
+
+        function ejecutarCalculos() {
+            document.getElementById('alert-container').classList.add('hidden');
+            const imc = calcularIMC();
+            const ctdivol = estimarCTDIvol();
+
+            try {
+                const edad = parseFloat(document.getElementById('edad').value);
+                const sexo = document.getElementById('sexo').value;
+                const ap = parseFloat(document.getElementById('ap').value);
+                const lat = parseFloat(document.getElementById('lat').value);
+                const region = document.getElementById('region').value;
+                const largo = parseFloat(document.getElementById('largo').value);
+                const kvp = parseInt(document.getElementById('kvp').value);
+                const mas = parseFloat(document.getElementById('mas').value);
+                const pitch = parseFloat(document.getElementById('pitch').value);
+                
+                if (isNaN(edad) || isNaN(ap) || isNaN(lat) || isNaN(largo) || ap <= 0 || lat <= 0 || largo <= 0) throw new Error("Error");
+
+                // SSDE y D. Efectivo
+                const dEfectivo = Math.sqrt(ap * lat);
+                document.getElementById('res-diametro').textContent = dEfectivo.toFixed(1);
+                
+                const dlp = ctdivol * largo;
+                const fConv = 3.704369 * Math.exp(-0.03671937 * dEfectivo);
+                const ssdeTotal = ctdivol * fConv;
+                document.getElementById('res-ssde').textContent = ssdeTotal.toFixed(1);
+
+                // Dosis Efectiva (ICRP 103 aprox) con factor Sexo
+                const diccK = region === "Tórax" ? {"0-1":0.039, "1-5":0.026, "5-10":0.018, "adulto":0.014} : 
+                              region === "Cabeza" ? {"0-1":0.011, "1-5":0.0067, "5-10":0.004, "adulto":0.0021} : 
+                              {"0-1":0.049, "1-5":0.030, "5-10":0.020, "adulto":0.015}; // Abdomen/Pelvis
+                
+                let k = edad <= 1 ? diccK["0-1"] : edad <= 5 ? diccK["1-5"] : edad <= 10 ? diccK["5-10"] : diccK["adulto"];
+                
+                // Ajuste académico por tejido radiosensible
+                if(sexo === 'F' && (region === 'Tórax' || region === 'Abdomen' || region === 'Pelvis')) {
+                    k *= 1.15; 
+                }
+
+                const dEfectivaTotal = dlp * k;
+                document.getElementById('res-efectiva').textContent = dEfectivaTotal.toFixed(2);
+
+                // Análisis DRL
+                const drlBase = valoresDRL[region] || 600;
+                const drlFinal = edad < 15 ? drlBase * 0.4 : drlBase; 
+                const exceso = dlp > drlFinal;
+                const diff = Math.abs(100 - ((dlp / drlFinal) * 100)).toFixed(1);
+
+                // Actualizar UI DRL
+                actualizarGrafico(dlp, drlFinal, exceso);
+                
+                const txtComp = document.getElementById('res-comparacion-texto');
+                const icn = document.getElementById('res-icono-estado');
+                const pOpt = document.getElementById('panel-optimizacion');
+                const pOk = document.getElementById('panel-ok');
+
+                if (exceso) {
+                    txtComp.innerHTML = `<span class="text-rose-600 font-bold">ALERTA:</span> Excede en un ${diff}% el Límite de Referencia.`;
+                    icn.innerHTML = "⚠️";
+                    pOk.classList.add('hidden'); pOk.classList.remove('flex');
+                    pOpt.classList.remove('hidden'); pOpt.classList.add('flex');
+                    generarSugerencias(edad, imc, kvp, mas, pitch, region, sexo, true);
+                } else {
+                    txtComp.innerHTML = `<span class="text-emerald-600 font-bold">ALARA:</span> ${diff}% por debajo del Límite de Referencia.`;
+                    icn.innerHTML = "✅";
+                    pOpt.classList.add('hidden'); pOpt.classList.remove('flex');
+                    pOk.classList.remove('hidden'); pOk.classList.add('flex');
+                }
+
+            } catch (e) {
+                document.getElementById('alert-container').classList.remove('hidden');
+                document.getElementById('res-diametro').textContent = '-';
+                document.getElementById('res-ssde').textContent = '-';
+                document.getElementById('res-efectiva').textContent = '-';
+            }
+        }
+        
+        window.onload = function() {
+            inicializarGrafico();
+            calcularIMC();
+            estimarCTDIvol();
+            ejecutarCalculos();
+        };
+    </script>
+</body>
+</html>
